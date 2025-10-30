@@ -19,12 +19,14 @@ else:
 from mcp.types import ToolAnnotations
 
 from ._errors import (
+    AuthenticationError,
     ClaudeSDKError,
     CLIConnectionError,
     CLIJSONDecodeError,
     CLINotFoundError,
     ProcessError,
 )
+from ._internal.auth import get_oauth_status
 from ._internal.session_mutations import (
     ForkSessionResult,
     delete_session,
@@ -577,8 +579,11 @@ __all__ = [
     "ToolAnnotations",
     # Errors
     "ClaudeSDKError",
+    "AuthenticationError",
     "CLIConnectionError",
     "CLINotFoundError",
     "ProcessError",
     "CLIJSONDecodeError",
+    # Auth helpers
+    "get_oauth_status",
 ]
