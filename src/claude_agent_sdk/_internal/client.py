@@ -10,6 +10,7 @@ from ..types import (
     HookMatcher,
     Message,
 )
+from .auth import AuthProvider, create_auth_provider
 from .message_parser import parse_message
 from .query import Query
 from .transport import Transport
@@ -19,8 +20,14 @@ from .transport.subprocess_cli import SubprocessCLITransport
 class InternalClient:
     """Internal client implementation."""
 
-    def __init__(self) -> None:
-        """Initialize the internal client."""
+    def __init__(self, auth_provider: AuthProvider | None = None) -> None:
+        """Initialize the internal client.
+
+        Args:
+            auth_provider: Optional authentication provider. If None,
+                          will auto-detect based on available credentials.
+        """
+        self._auth_provider = auth_provider
 
     def _convert_hooks_to_internal_format(
         self, hooks: dict[HookEvent, list[HookMatcher]]
@@ -44,7 +51,16 @@ class InternalClient:
         options: ClaudeAgentOptions,
         transport: Transport | None = None,
     ) -> AsyncIterator[Message]:
-        """Process a query through transport and Query."""
+        """Process a query through transport and Query.
+
+        Raises:
+            AuthenticationError: If no authentication method is available.
+        """
+        # Prepare authentication (fail fast if no auth available)
+        if self._auth_provider is None:
+            self._auth_provider = create_auth_provider()
+
+        self._auth_provider.prepare()
 
         # Validate and configure permission settings (matching TypeScript SDK logic)
         configured_options = options

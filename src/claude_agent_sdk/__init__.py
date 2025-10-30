@@ -5,12 +5,14 @@ from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
 
 from ._errors import (
+    AuthenticationError,
     ClaudeSDKError,
     CLIConnectionError,
     CLIJSONDecodeError,
     CLINotFoundError,
     ProcessError,
 )
+from ._internal.auth import get_oauth_status
 from ._internal.transport import Transport
 from ._version import __version__
 from .client import ClaudeSDKClient
@@ -348,8 +350,11 @@ __all__ = [
     "SdkMcpTool",
     # Errors
     "ClaudeSDKError",
+    "AuthenticationError",
     "CLIConnectionError",
     "CLINotFoundError",
     "ProcessError",
     "CLIJSONDecodeError",
+    # Auth helpers
+    "get_oauth_status",
 ]

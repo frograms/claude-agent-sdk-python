@@ -54,3 +54,15 @@ class MessageParseError(ClaudeSDKError):
     def __init__(self, message: str, data: dict[str, Any] | None = None):
         self.data = data
         super().__init__(message)
+
+
+class AuthenticationError(ClaudeSDKError):
+    """Raised when authentication fails or is not available."""
+
+    def __init__(self, message: str, suggestion: str | None = None):
+        self.suggestion = suggestion
+
+        if suggestion:
+            message = f"{message}\n\n{suggestion}"
+
+        super().__init__(message)
