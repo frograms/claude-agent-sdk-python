@@ -50,6 +50,9 @@ class OAuthProvider(AuthProvider):
         On macOS, extracts credentials from Keychain to file.
         On other platforms, verifies credentials file exists.
 
+        Important: Removes ANTHROPIC_API_KEY from environment to ensure
+        Claude CLI uses OAuth credentials instead of API key.
+
         Raises:
             AuthenticationError: If no OAuth credentials found.
         """
@@ -58,6 +61,14 @@ class OAuthProvider(AuthProvider):
                 "No OAuth credentials found",
                 suggestion="Log in with: claude login\n"
                 "Or set ANTHROPIC_API_KEY environment variable",
+            )
+
+        # Remove API key from environment to force CLI to use OAuth
+        # Claude CLI prioritizes ANTHROPIC_API_KEY over OAuth credentials
+        removed_api_key = os.environ.pop("ANTHROPIC_API_KEY", None)
+        if removed_api_key:
+            logger.debug(
+                "Removed ANTHROPIC_API_KEY from environment to use OAuth credentials"
             )
 
         if sys.platform == "darwin":
