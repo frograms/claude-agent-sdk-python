@@ -85,10 +85,19 @@ class ClaudeSDKClient:
     async def connect(
         self, prompt: str | AsyncIterable[dict[str, Any]] | None = None
     ) -> None:
-        """Connect to Claude with a prompt or message stream."""
+        """Connect to Claude with a prompt or message stream.
 
+        Raises:
+            AuthenticationError: If no authentication method is available.
+        """
+
+        from ._internal.auth import create_auth_provider
         from ._internal.query import Query
         from ._internal.transport.subprocess_cli import SubprocessCLITransport
+
+        # Prepare authentication (fail fast if no auth available)
+        auth_provider = create_auth_provider()
+        auth_provider.prepare()
 
         # Auto-connect with empty async iterable if no prompt is provided
         async def _empty_stream() -> AsyncIterator[dict[str, Any]]:
