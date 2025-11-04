@@ -2,6 +2,32 @@
 
 Python SDK for Claude Agent. See the [Claude Agent SDK documentation](https://docs.anthropic.com/en/docs/claude-code/sdk/sdk-python) for more information.
 
+## OAuth 브랜치 사용하기 (개발 중)
+
+> **참고**: OAuth 인증 기능은 현재 `oauth` 브랜치에서 개발 중입니다. 이 기능을 사용하면 Claude Max 사용자가 API 키 없이 SDK를 사용할 수 있습니다.
+
+다른 프로젝트에서 이 브랜치를 사용하려면, `pyproject.toml`에 다음 내용을 추가하세요:
+
+```toml
+[project]
+dependencies = [
+    "claude-agent-sdk",
+]
+
+[tool.uv.sources]
+claude-agent-sdk = { git = "https://github.com/frograms/claude-agent-sdk-python", branch = "oauth" }
+```
+
+설치:
+
+```bash
+# 처음 설치
+uv sync
+
+# 업데이트 (oauth 브랜치가 업데이트 되었을 때)
+uv sync --upgrade
+```
+
 ## Installation
 
 ```bash
