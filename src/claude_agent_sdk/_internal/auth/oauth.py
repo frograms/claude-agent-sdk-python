@@ -153,11 +153,12 @@ class OAuthProvider(AuthProvider):
         )
 
         credentials_json = result.stdout.strip()
-        credentials = json.loads(credentials_json)
+        credentials: dict[str, Any] = json.loads(credentials_json)
 
         # Extract claudeAiOauth field if present
         if "claudeAiOauth" in credentials:
-            return credentials["claudeAiOauth"]
+            oauth_data: dict[str, Any] = credentials["claudeAiOauth"]
+            return oauth_data
         else:
             return credentials
 
