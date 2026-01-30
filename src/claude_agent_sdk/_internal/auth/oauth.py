@@ -128,11 +128,11 @@ class OAuthProvider(AuthProvider):
             return False
 
         try:
-            with open(self._credentials_path, "r") as f:
+            with self._credentials_path.open() as f:
                 data = json.load(f)
                 oauth_data = data.get("claudeAiOauth")
                 return oauth_data is not None and "accessToken" in oauth_data
-        except (json.JSONDecodeError, IOError, KeyError) as e:
+        except (json.JSONDecodeError, OSError, KeyError) as e:
             logger.debug(f"Credentials file check failed: {e}")
             return False
 
@@ -179,7 +179,7 @@ class OAuthProvider(AuthProvider):
         # Write credentials file
         credentials_data = {"claudeAiOauth": oauth_data}
 
-        with open(self._credentials_path, "w") as f:
+        with self._credentials_path.open("w") as f:
             json.dump(credentials_data, f, indent=2)
 
         # Set secure file permissions

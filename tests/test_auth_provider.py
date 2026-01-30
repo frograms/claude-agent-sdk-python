@@ -110,26 +110,30 @@ class TestCreateAuthProvider:
 
     def test_creates_apikey_provider_as_fallback(self):
         """Test factory creates API key provider when OAuth not available."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-test"}):
-            with patch("claude_agent_sdk._internal.auth.OAuthProvider") as mock_oauth:
-                mock_oauth_instance = Mock()
-                mock_oauth_instance.is_available.return_value = False
-                mock_oauth.return_value = mock_oauth_instance
+        with (
+            patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-test"}),
+            patch("claude_agent_sdk._internal.auth.OAuthProvider") as mock_oauth,
+        ):
+            mock_oauth_instance = Mock()
+            mock_oauth_instance.is_available.return_value = False
+            mock_oauth.return_value = mock_oauth_instance
 
-                provider = create_auth_provider()
+            provider = create_auth_provider()
 
-                assert isinstance(provider, APIKeyProvider)
+            assert isinstance(provider, APIKeyProvider)
 
     def test_raises_when_no_auth_available(self):
         """Test factory raises when no authentication is available."""
-        with patch.dict(os.environ, {}, clear=True):
-            with patch("claude_agent_sdk._internal.auth.OAuthProvider") as mock_oauth:
-                mock_oauth_instance = Mock()
-                mock_oauth_instance.is_available.return_value = False
-                mock_oauth.return_value = mock_oauth_instance
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("claude_agent_sdk._internal.auth.OAuthProvider") as mock_oauth,
+        ):
+            mock_oauth_instance = Mock()
+            mock_oauth_instance.is_available.return_value = False
+            mock_oauth.return_value = mock_oauth_instance
 
-                with pytest.raises(AuthenticationError) as exc_info:
-                    create_auth_provider()
+            with pytest.raises(AuthenticationError) as exc_info:
+                create_auth_provider()
 
-                assert "No authentication method available" in str(exc_info.value)
-                assert "claude login" in str(exc_info.value)
+            assert "No authentication method available" in str(exc_info.value)
+            assert "claude login" in str(exc_info.value)
