@@ -18,10 +18,12 @@ class OAuthProvider(AuthProvider):
     """OAuth authentication provider.
 
     Supports OAuth credentials from:
+    - CLAUDE_CODE_OAUTH_TOKEN environment variable (long-lived token from `claude setup-token`)
     - macOS Keychain (via `security` command)
     - Credentials file at ~/.claude/.credentials.json
     """
 
+    ENV_TOKEN_VAR = "CLAUDE_CODE_OAUTH_TOKEN"
     KEYCHAIN_SERVICE_NAME = "Claude Code-credentials"
     CREDENTIALS_PATH = Path.home() / ".claude" / ".credentials.json"
     SUBPROCESS_TIMEOUT = 5  # seconds
@@ -36,8 +38,12 @@ class OAuthProvider(AuthProvider):
 
     def is_available(self) -> bool:
         """Check if OAuth credentials are available."""
+        # Check env var first (highest priority for OAuth)
+        if self._check_env_token():
+            return True
+
         if sys.platform == "darwin":
-            # macOS: Check Keychain first
+            # macOS: Check Keychain
             if self._check_keychain():
                 return True
 
@@ -60,6 +66,7 @@ class OAuthProvider(AuthProvider):
             raise AuthenticationError(
                 "No OAuth credentials found",
                 suggestion="Log in with: claude login\n"
+                "Or set CLAUDE_CODE_OAUTH_TOKEN environment variable\n"
                 "Or set ANTHROPIC_API_KEY environment variable",
             )
 
@@ -70,6 +77,11 @@ class OAuthProvider(AuthProvider):
             logger.debug(
                 "Removed ANTHROPIC_API_KEY from environment to use OAuth credentials"
             )
+
+        # If env token is set, CLI reads it directly — no file setup needed
+        if self._check_env_token():
+            logger.info("Using OAuth credentials from CLAUDE_CODE_OAUTH_TOKEN env var")
+            return
 
         if sys.platform == "darwin":
             # macOS: Extract from Keychain and create file
@@ -90,6 +102,28 @@ class OAuthProvider(AuthProvider):
     def get_name(self) -> str:
         """Get auth method name."""
         return "oauth"
+
+    def _check_env_token(self) -> bool:
+        """Check if CLAUDE_CODE_OAUTH_TOKEN env var is set.
+
+        Accepts both formats:
+        - Raw token string: sk-ant-oat01-... (from `claude setup-token`)
+        - JSON object: {"accessToken": "sk-ant-oat01-...", ...}
+        """
+        token = os.environ.get(self.ENV_TOKEN_VAR)
+        if not token:
+            return False
+
+        # Raw token string (e.g. from `claude setup-token`)
+        if token.startswith("sk-ant-"):
+            return True
+
+        # JSON format (e.g. from Keychain extraction)
+        try:
+            data = json.loads(token)
+            return "accessToken" in data
+        except (json.JSONDecodeError, TypeError):
+            return False
 
     def _check_keychain(self) -> bool:
         """Check if macOS Keychain has OAuth credentials."""

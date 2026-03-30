@@ -85,6 +85,118 @@ class TestOAuthProvider:
             assert "No OAuth credentials found" in str(exc_info.value)
             assert "claude login" in str(exc_info.value)
 
+    def test_is_available_with_env_token(self, tmp_path):
+        """Test OAuth is detected when CLAUDE_CODE_OAUTH_TOKEN env var is set."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+        token_json = '{"accessToken":"sk-ant-oat01-test","refreshToken":"rt","expiresAt":"2027-01-01T00:00:00.000Z"}'
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": token_json}, clear=True),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            assert provider.is_available() is True
+
+    def test_is_available_with_env_token_raw_string(self, tmp_path):
+        """Test OAuth is detected when CLAUDE_CODE_OAUTH_TOKEN is a raw token string."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(
+                os.environ,
+                {"CLAUDE_CODE_OAUTH_TOKEN": "sk-ant-oat01-some-raw-token"},
+                clear=True,
+            ),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            assert provider.is_available() is True
+
+    def test_is_available_with_env_token_invalid_json(self, tmp_path):
+        """Test OAuth is not available when CLAUDE_CODE_OAUTH_TOKEN is invalid JSON."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": "not-json"}, clear=True),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            assert provider.is_available() is False
+
+    def test_is_available_with_env_token_missing_access_token(self, tmp_path):
+        """Test OAuth is not available when CLAUDE_CODE_OAUTH_TOKEN has no accessToken."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(
+                os.environ,
+                {"CLAUDE_CODE_OAUTH_TOKEN": '{"refreshToken":"rt"}'},
+                clear=True,
+            ),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            assert provider.is_available() is False
+
+    def test_prepare_with_env_token_does_not_write_file(self, tmp_path):
+        """Test prepare with env token doesn't write credentials file."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+        token_json = '{"accessToken":"sk-ant-oat01-test","refreshToken":"rt","expiresAt":"2027-01-01T00:00:00.000Z"}'
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": token_json}, clear=True),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            provider.prepare()
+            assert not creds_file.exists()
+
+    def test_prepare_with_env_token_removes_api_key(self, tmp_path):
+        """Test prepare with env token still removes ANTHROPIC_API_KEY."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+        token_json = '{"accessToken":"sk-ant-oat01-test","refreshToken":"rt","expiresAt":"2027-01-01T00:00:00.000Z"}'
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(
+                os.environ,
+                {"CLAUDE_CODE_OAUTH_TOKEN": token_json, "ANTHROPIC_API_KEY": "sk-key"},
+                clear=True,
+            ),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            provider.prepare()
+            assert "ANTHROPIC_API_KEY" not in os.environ
+
+    def test_env_token_takes_priority_over_file(self, tmp_path):
+        """Test CLAUDE_CODE_OAUTH_TOKEN takes priority over credentials file."""
+        import sys
+
+        creds_file = tmp_path / ".credentials.json"
+        creds_file.write_text('{"claudeAiOauth": {"accessToken": "file-token"}}')
+        token_json = '{"accessToken":"sk-ant-oat01-env-token","refreshToken":"rt","expiresAt":"2027-01-01T00:00:00.000Z"}'
+
+        with (
+            patch.object(sys, "platform", "linux"),
+            patch.dict(os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": token_json}, clear=True),
+        ):
+            provider = OAuthProvider(credentials_path=creds_file)
+            assert provider.is_available() is True
+            # prepare should not touch the file since env var is present
+            provider.prepare()
+
     def test_get_name(self):
         """Test get_name returns correct identifier."""
         provider = OAuthProvider()
