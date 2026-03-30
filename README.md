@@ -4,7 +4,36 @@ Python SDK for Claude Agent. See the [Claude Agent SDK documentation](https://pl
 
 ## OAuth 브랜치 사용하기 (개발 중)
 
-> **참고**: OAuth 인증 기능은 현재 `oauth` 브랜치에서 개발 중입니다. 이 기능을 사용하면 Claude Max 사용자가 API 키 없이 SDK를 사용할 수 있습니다.
+> **참고**: OAuth 인증 기능은 현재 `oauth` 브랜치에서 개발 중입니다. 이 기능을 사용하면 Claude Max/Pro 사용자가 API 키 없이 SDK를 사용할 수 있습니다.
+
+### 인증 방법
+
+세 가지 인증 방법을 지원하며, 위에서부터 우선순위가 높습니다:
+
+**1. Long-lived token (권장 — CI/CD, 서버 환경)**
+
+```bash
+# 토큰 발급 (브라우저에서 인증, 1년 유효)
+claude setup-token
+
+# 환경변수 설정
+export CLAUDE_CODE_OAUTH_TOKEN='sk-ant-oat01-...'
+```
+
+**2. macOS Keychain (macOS 로컬 개발)**
+
+```bash
+# 로그인하면 Keychain에 자동 저장
+claude login
+```
+
+**3. API 키 (종량제 과금)**
+
+```bash
+export ANTHROPIC_API_KEY='sk-ant-api03-...'
+```
+
+### 설치
 
 다른 프로젝트에서 이 브랜치를 사용하려면, `pyproject.toml`에 다음 내용을 추가하세요:
 
@@ -17,8 +46,6 @@ dependencies = [
 [tool.uv.sources]
 claude-agent-sdk = { git = "https://github.com/frograms/claude-agent-sdk-python", branch = "oauth" }
 ```
-
-설치:
 
 ```bash
 # 처음 설치
